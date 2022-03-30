@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="51bbc31f-7105-4620-bed0-46f8cfaf8734" >
+		<http:listener-connection host="0.0.0.0" port="8082" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="1d485d4b-4047-4cea-89b5-7671484ddf1b" >
+		<http:request-connection host="localhost" port="8081" />
+	</http:request-config>
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="03c55882-f974-4383-918a-4b1afcebe348" >
+		<salesforce:basic-connection username="yaswanthreddy983@gmail.com" password="@Yashu810" securityToken="oRlxBgqVuXXJEXhjICZVn3puV"/>
+	</salesforce:sfdc-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="6ea0bfdd-3fd9-4bf7-b5c7-b10d49106dc2" >
+		<file:connection workingDir="C:\Users\User\OneDrive\Desktop" />
+	</file:config>
+	<flow name="sfdc_pocFlow" doc:id="1354b914-c0a6-4120-8aea-b81003d9a838" >
+		<http:listener doc:name="Listener" doc:id="12052ee7-5ef7-49ed-ae96-96798eb5b352" config-ref="HTTP_Listener_config" path="/sfdc"/>
+		<http:request method="GET" doc:name="Request" doc:id="ebb387c0-72e3-4deb-a3f3-21dff7fc89d9" config-ref="HTTP_Request_configuration" path="/api/sys/studentsData/v1"/>
+		<logger level="INFO" doc:name="Logger" doc:id="5de0a83d-40c2-4358-b093-f08511a55b3b" message="#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="f9744d11-0111-4122-b1ea-fc349dd6bc21">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[{
+  "studentId__c": payload.sId,
+  "sName__c": payload.sName,
+  "depName__c": payload.deptName,
+  "sEmail__c": payload.sEmail,
+  "phoneNumber__c": payload.phoneNumber,
+  "sAddress__c": payload.sAddress,
+  "boodGroup__c": payload.bloodGroup,
+  "collegeName__c": payload.collegeName,
+  "sPercentage__c": payload.sPercentage
+ }]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:upsert doc:name="Upsert" doc:id="7d6125a3-abb1-4563-aad8-93fca31335c7" config-ref="Salesforce_Config" objectType="student_details__c" externalIdFieldName="studentId__c"/>
+		<logger level="INFO" doc:name="Logger" doc:id="43140950-9a1b-4249-9573-8ccad9111d6d" message="#[payload]"/>
+	</flow>
+</mule>
